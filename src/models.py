@@ -1,10 +1,13 @@
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+db = SQLAlchemy(app)
 
-db = SQLAlchemy()
+Base = declarative_base()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,7 +31,7 @@ class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('orders', lazy=True))
-    hamburger_id = db.Column(db.Integer, db.ForeignKey('hamburger.id'), nullable=False)
+    hamburger_id = db.Column(db.Integer, db.ForeignKey('hamburgers.id'), nullable=False)
     hamburger = db.relationship('Hamburger', backref=db.backref('orders', lazy=True))
     quantity = db.Column(db.Integer, default=1)
     created_at = db.Column(db.DateTime, default=db.func.now())
@@ -72,3 +75,41 @@ class VeggieBurger(Hamburger):
     }
     has_tofu = Column(Boolean, default=False)
 
+class Beverage(Base):
+    __tablename__ = 'beverages'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), nullable=False)
+    price = Column(Float(precision=2), nullable=False)
+    description = Column(String(255), nullable=True)
+    type = Column(String(50))
+
+    __mapper_args__ = {
+        'polymorphic_on': type,
+        'polymorphic_identity': 'beverage'
+    }
+
+class FrenchFries(Base):
+    __tablename__ = 'french_fries'
+    id = Column(Integer, primary_key=True)
+    size = Column(String(50), nullable=False)
+    price = Column(Float(precision=2), nullable=False)
+    description = Column(String(255), nullable=True)
+    type = Column(String(50))
+
+    __mapper_args__ = {
+        'polymorphic_on': type,
+        'polymorphic_identity': 'french_fries'
+    }
+
+class OnionRings(Base):
+    __tablename__ = 'onion_rings'
+    id = Column(Integer, primary_key=True)
+    size = Column(String(50), nullable=False)
+    price = Column(Float(precision=2), nullable=False)
+    description = Column(String(255), nullable=True)
+    type = Column(String(50))
+
+    __mapper_args__ = {
+        'polymorphic_on': type,
+        'polymorphic_identity': 'onion_rings'
+    }
