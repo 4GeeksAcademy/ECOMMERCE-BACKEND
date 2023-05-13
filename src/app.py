@@ -13,7 +13,6 @@ from api.admin import setup_admin
 from api.commands import setup_commands
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
-
 #from models import Person
 
 ENV = os.getenv("FLASK_ENV")
