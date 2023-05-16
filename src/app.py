@@ -8,7 +8,8 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Hamburger
+from models import db, User, Order, Hamburger, Cheeseburger, VeggieBurger, Beverage, Acompañamientos, OnionRings, FrenchFries
+from flask_login import login_required
 #from models import Person
 
 app = Flask(__name__)
@@ -44,59 +45,102 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
-from flask import Flask, jsonify, request
 
-app = Flask(__name__)
-
-# Rutas para manejar usuarios
+# Route for getting all users
 @app.route('/users', methods=['GET'])
-def get_users():
-    # Obtener todos los usuarios de la base de datos
+def get_all_users():
     users = User.query.all()
-    user_list = [user.serialize() for user in users]
-    return jsonify(user_list), 200
+    return jsonify([user.serialize() for user in users]), 200
 
+# Route for creating a new user
 @app.route('/users', methods=['POST'])
 def create_user():
-    # Obtener los datos del usuario del cuerpo de la solicitud
     name = request.json.get('name')
     email = request.json.get('email')
     password = request.json.get('password')
+    is_admin = request.json.get('is_admin')
+    user = User(name=name, email=email, password=password, is_admin=is_admin)
 
-    # Crear un nuevo objeto de usuario
-    new_user = User(name=name, email=email, password=password)
-
-    # Guardar el nuevo usuario en la base de datos
-    db.session.add(new_user)
+    db.session.add(user)
     db.session.commit()
 
-    return jsonify(new_user.serialize()), 201
+    return jsonify(user.serialize()), 201
 
-# Rutas para manejar las hamburguesas
+
+
+@app.route('/admin')
+@login_required
+def admin():
+    if not current_user.is_admin:
+        return 'This is the admin page'
+
+
+# Route for getting all orders
+@app.route('/orders', methods=['GET'])
+def get_all_orders():
+    orders = Order.query.all()
+    return jsonify([order.serialize() for order in orders]), 200
+
+#agregar query filter by date.
+
+# Route for creating a new order
+@app.route('/orders', methods=['POST'])
+def create_order():
+    user_id = request.json.get('user_id')
+    hamburger_id = request.json.get('hamburger_id')
+    acompañamiento_id = request.json.get('acompañamiento_id')
+    beverage_id = request.json.get('beverage_id')
+    quantity = request.json.get('quantity')
+    order = Order(user_id=user_id, hamburger_id=hamburger_id, acompañamiento_id=acompañamiento_id, beverage_id=beverage_id, quantity=quantity)
+    db.session.add(order)
+    db.session.commit()
+    return jsonify(order.serialize()), 201
+#si Q se refiere a cada una, o a la orden en si.
+
+# Route for getting all hamburgers
 @app.route('/hamburgers', methods=['GET'])
-def get_hamburgers():
-    # Obtener todas las hamburguesas de la base de datos
+def get_all_hamburgers():
     hamburgers = Hamburger.query.all()
-    hamburger_list = [hamburger.serialize() for hamburger in hamburgers]
-    return jsonify(hamburger_list), 200
+    return jsonify([hamburger.serialize() for hamburger in hamburgers]), 200
 
-@app.route('/hamburgers', methods=['POST'])
-def create_hamburger():
-    # Obtener los datos de la hamburguesa del cuerpo de la solicitud
-    name = request.json.get('name')
-    price = request.json.get('price')
-    description = request.json.get('description')
-    is_vegetarian = request.json.get('is_vegetarian')
+# Route for getting all cheeseburgers
+@app.route('/cheeseburgers', methods=['GET'])
+def get_all_cheeseburgers():
+    cheeseburgers = Cheeseburger.query.all()
+    return jsonify([cheeseburger.serialize() for cheeseburger in cheeseburgers]), 200
 
-    # Crear un nuevo objeto de hamburguesa
-    new_hamburger = Hamburger(name=name, price=price, description=description, is_vegetarian=is_vegetarian)
+# Route for getting all veggieburgers
+@app.route('/veggieburgers', methods=['GET'])
+def get_all_veggieburgers():
+    veggieburgers = VeggieBurger.query.all()
+    return jsonify([veggieburger.serialize() for veggieburger in veggieburgers]), 200
 
-    # Guardar la nueva hamburguesa en la base de datos
-    db.session.add(new_hamburger)
-    db.session.commit()
+# Route for getting all beverages
+@app.route('/beverages', methods=['GET'])
+def get_all_beverages():
+    beverages = Beverage.query.all()
+    return jsonify([beverage.serialize() for beverage in beverages]), 200
 
-    return jsonify(new_hamburger.serialize()), 201
+# Route for getting all acompañamientos
+@app.route('/acomp', methods=['GET'])
+def get_all_acompañamientos():
+    acompañamientos = Acompañamientos.query.all()
+    return jsonify([acompañamiento.serialize() for acompañamiento in acompañamientos]), 200
 
+# Route for getting all onion rings
+@app.route('/onion_rings', methods=['GET'])
+def get_all_onion_rings():
+    onion_rings = OnionRings.query.all()
+    return jsonify([onion_ring.serialize() for onion_ring in onion_rings]), 200
+
+# Route for getting all french fries
+@app.route('/french_fries', methods=['GET'])
+def french_fries():
+    french_fries = FrenchFries.query.all()
+    french_fries_json = [ff.serialize() for ff in french_fries]
+    return jsonify(french_fries_json)
+#rutas por crear: CREATE HAMBURGER, CRREATE BEBIDA, CREATE ACOMPAÑAMIENTO.
+# PLUS: CREAR POSTRES
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':

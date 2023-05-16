@@ -26,6 +26,18 @@ class User(db.Model):
             'email': self.email,
             'is_admin': self.is_admin
         }
+    
+class Admin(User):
+    def __init__(self, name, email, password):
+        super().__init__(name, email, password)
+        self.is_admin = True
+        self.permissions = ['create', 'read', 'update', 'delete']
+
+    def serialize(self):
+        data = super().serialize()
+        data['permissions'] = self.permissions
+        return data
+    
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
