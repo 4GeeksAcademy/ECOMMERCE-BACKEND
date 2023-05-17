@@ -8,7 +8,11 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Hamburger
+from models import db, User, Order, Hamburger, Cheeseburger, VeggieBurger, Beverage, Acompañamientos, OnionRings, FrenchFries
+from flask_login import login_required
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+import datetime
+
 #from models import Person
 
 ENV = os.getenv("FLASK_ENV")
@@ -20,10 +24,6 @@ jwt=JWTManager(app)
 
 # database condiguration
 db_url = os.getenv("DATABASE_URL")
-if db_url is not None:
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace("postgres://", "postgresql://")
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db, compare_type = True)
@@ -116,6 +116,27 @@ def create_hamburger():
     db.session.commit()
 
     return jsonify(new_hamburger.serialize()), 201
+
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    body = request.get_json()
+    user = User.query.filter_by(email=body['email']).first
+    if not user:
+        new_user = User(email=body['email'], password=body['password'], is_active=True)
+        db.session.add(new_user)
+        db.session.commit()
+        expire =  datetime.timedelta(minutes=1)
+        new_token = create_access_token(identity=new_user.email,expires_delta=expire)
+        return jsonify({
+                "msg":"User was created",
+                "token":new_token,
+                "exp":expire.total_seconds()
+            })
+    else:
+        return jsonify({"msg":"The email entered already has an associated account. Please Log in"})
+
+
 
 
 # this only runs if `$ python src/app.py` is executed
