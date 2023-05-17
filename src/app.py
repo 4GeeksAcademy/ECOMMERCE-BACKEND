@@ -121,7 +121,7 @@ def create_hamburger():
 @app.route('/signup', methods=['POST'])
 def signup():
     body = request.get_json()
-    user = User.query.filter_by(email=body['email']).first
+    user = User.query.filter_by(email=body['email']).first{}
     if not user:
         new_user = User(email=body['email'], password=body['password'], is_active=True)
         db.session.add(new_user)
