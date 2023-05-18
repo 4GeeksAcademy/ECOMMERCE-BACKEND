@@ -152,7 +152,7 @@ def signup():
     body = request.get_json()
     user = User.query.filter_by(email=body['email']).first()
     if not user:
-        new_user = User(email=body['email'], password=body['password'], is_admin = False)
+        new_user = User(email=body['email'], password=body['password'], name=body['name'], is_admin = False)
         db.session.add(new_user)
         db.session.commit()
         expire =  datetime.timedelta(minutes=1)
@@ -164,21 +164,17 @@ def signup():
             })
     else:
         return jsonify({"msg":"The email entered already has an associated account. Please Log in"})
-<<<<<<< HEAD
     
-=======
-
->>>>>>> refs/remotes/origin/benbungle
 @app.route("/login", methods=['POST'])
 def login():
     body = request.get_json()
     user = User.query.filter_by(email=body['email']).first()
     if user:
         if user.password == body["password"]:
+            expire = datetime.timedelta(minutes=1)
+            token = create_access_token(identity=user.email, expires_delta=expire)
             if user.is_admin:
                 # Perform admin login actions
-                expire = datetime.timedelta(minutes=1)
-                token = create_access_token(identity=user.email, expires_delta=expire)
                 return jsonify({
                     "msg": "Admin login successful",
                     "token": token,
@@ -186,8 +182,6 @@ def login():
                 })
             else:
                 # Perform regular user login actions
-                expire = datetime.timedelta(minutes=1)
-                token = create_access_token(identity=user.email, expires_delta=expire)
                 return jsonify({
                     "msg": "User login successful",
                     "token": token,
@@ -200,11 +194,7 @@ def login():
     else:
         return jsonify({
             "msg": "Wrong email or password. Please try again."
-<<<<<<< HEAD
-        }), 401    
-=======
         }), 401
->>>>>>> refs/remotes/origin/benbungle
 
 
 # this only runs if `$ python src/app.py` is executed
