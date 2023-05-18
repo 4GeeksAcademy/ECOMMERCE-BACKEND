@@ -25,6 +25,8 @@ db_url = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+jwt=JWTManager(app)
+
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
@@ -68,7 +70,7 @@ def create_user():
     db.session.commit()
 
     return jsonify(user.serialize()), 201
-
+#
 
 
 @app.route('/admin')
@@ -148,9 +150,9 @@ def french_fries():
 @app.route('/signup', methods=['POST'])
 def signup():
     body = request.get_json()
-    user = User.query.filter_by(email=body['email']).first
+    user = User.query.filter_by(email=body['email']).first()
     if not user:
-        new_user = User(email=body['email'], password=body['password'], is_active=True)
+        new_user = User(email=body['email'], password=body['password'], is_admin = False)
         db.session.add(new_user)
         db.session.commit()
         expire =  datetime.timedelta(minutes=1)
@@ -162,11 +164,49 @@ def signup():
             })
     else:
         return jsonify({"msg":"The email entered already has an associated account. Please Log in"})
-
-
+    
+@app.route("/login", methods=['POST'])
+def login():
+    body = request.get_json()
+    user = User.query.filter_by(email=body['email']).first()
+    if user:
+        if user.password == body["password"]:
+            if user.is_admin:
+                # Perform admin login actions
+                expire = datetime.timedelta(minutes=1)
+                token = create_access_token(identity=user.email, expires_delta=expire)
+                return jsonify({
+                    "msg": "Admin login successful",
+                    "token": token,
+                    "exp": expire.total_seconds(),
+                })
+            else:
+                # Perform regular user login actions
+                expire = datetime.timedelta(minutes=1)
+                token = create_access_token(identity=user.email, expires_delta=expire)
+                return jsonify({
+                    "msg": "User login successful",
+                    "token": token,
+                    "exp": expire.total_seconds(),
+                })
+        else:
+            return jsonify({
+                "msg": "Wrong email or password. Please try again."
+            }), 401
+    else:
+        return jsonify({
+            "msg": "Wrong email or password. Please try again."
+        }), 401    
 
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=False)
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin',"*")
+    response.headers.add('Access-Control-Allow-Headers','Content-type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GEt,PUT,POST,DELETE,OPTIONS')
+    return response
