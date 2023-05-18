@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Order, Hamburger, Cheeseburger, VeggieBurger, Beverage, Acompañamientos, OnionRings, FrenchFries
+from models import db, User, Hamburger, Cheeseburger, VeggieBurger#, Beverage, Acompañamientos, OnionRings, FrenchFries , Order
 from flask_login import login_required
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
@@ -17,7 +17,7 @@ import datetime
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
-
+jwt=JWTManager(app)
 db_url = os.getenv("DATABASE_URL")
 
 
@@ -164,7 +164,11 @@ def signup():
             })
     else:
         return jsonify({"msg":"The email entered already has an associated account. Please Log in"})
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> refs/remotes/origin/benbungle
 @app.route("/login", methods=['POST'])
 def login():
     body = request.get_json()
@@ -196,7 +200,11 @@ def login():
     else:
         return jsonify({
             "msg": "Wrong email or password. Please try again."
+<<<<<<< HEAD
         }), 401    
+=======
+        }), 401
+>>>>>>> refs/remotes/origin/benbungle
 
 
 # this only runs if `$ python src/app.py` is executed
