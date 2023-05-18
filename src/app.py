@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Order, Hamburger, Cheeseburger, VeggieBurger, Beverage, Acompañamientos, OnionRings, FrenchFries
+from models import db, User, Hamburger, Cheeseburger, VeggieBurger#, Beverage, Acompañamientos, OnionRings, FrenchFries , Order
 from flask_login import login_required
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
@@ -17,7 +17,7 @@ import datetime
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
-
+jwt=JWTManager(app)
 db_url = os.getenv("DATABASE_URL")
 
 
@@ -163,7 +163,38 @@ def signup():
     else:
         return jsonify({"msg":"The email entered already has an associated account. Please Log in"})
 
-
+@app.route("/login", methods=['POST'])
+def login():
+    body = request.get_json()
+    user = User.query.filter_by(email=body['email']).first()
+    if user:
+        if user.password == body["password"]:
+            if user.is_admin:
+                # Perform admin login actions
+                expire = datetime.timedelta(minutes=1)
+                token = create_access_token(identity=user.email, expires_delta=expire)
+                return jsonify({
+                    "msg": "Admin login successful",
+                    "token": token,
+                    "exp": expire.total_seconds(),
+                })
+            else:
+                # Perform regular user login actions
+                expire = datetime.timedelta(minutes=1)
+                token = create_access_token(identity=user.email, expires_delta=expire)
+                return jsonify({
+                    "msg": "User login successful",
+                    "token": token,
+                    "exp": expire.total_seconds(),
+                })
+        else:
+            return jsonify({
+                "msg": "Wrong email or password. Please try again."
+            }), 401
+    else:
+        return jsonify({
+            "msg": "Wrong email or password. Please try again."
+        }), 401
 
 
 # this only runs if `$ python src/app.py` is executed
