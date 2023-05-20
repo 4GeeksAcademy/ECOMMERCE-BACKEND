@@ -1,12 +1,20 @@
-@app.route('/acompañamiento', methods=['POST'])
-def create_acompañamiento():
-name = request.json.get('name')
-price = request.json.get('price')
-description = request.json.get('description')
-acompañamiento_type = request.json.get('acompañamiento_type')
+import os
+from flask_admin import Admin
+from models import db, User, Hamburger, Beverage, Acompañamientos, Order
+from flask_admin.contrib.sqla import ModelView
 
-acompañamiento = Acompañamiento(name=name, price=price, description=description, acompañamiento_type=acompañamiento_type)
-db.session.add(acompañamiento)
-db.session.commit()
+def setup_admin(app):
+    app.secret_key = os.environ.get('FLASK_APP_KEY', 'sample key')
+    app.config['FLASK_ADMIN_SWATCH'] = 'cerulean'
+    admin = Admin(app, name='4Geeks Admin', template_mode='bootstrap3')
 
-return jsonify(acompañamiento.serialize()), 201
+    
+    # Add your models here, for example this is how we add a the User model to the admin
+    admin.add_view(ModelView(User, db.session))
+    admin.add_view(ModelView(Hamburger, db.session))
+    admin.add_view(ModelView(Beverage, db.session))
+    admin.add_view(ModelView(Acompañamientos, db.session))
+    admin.add_view(ModelView(Order, db.session))
+
+    # You can duplicate that line to add mew models
+    # admin.add_view(ModelView(YourModelName, db.session))
