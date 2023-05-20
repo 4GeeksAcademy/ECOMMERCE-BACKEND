@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: eba0b856704b
+Revision ID: 91515a028e0a
 Revises: 
-Create Date: 2023-05-18 23:34:40.052942
+Create Date: 2023-05-20 14:46:00.361203
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'eba0b856704b'
+revision = '91515a028e0a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,7 +23,7 @@ def upgrade():
     sa.Column('size', sa.String(length=50), nullable=False),
     sa.Column('price', sa.Float(precision=2), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=True),
-    sa.Column('type', sa.String(length=50), nullable=True),
+    sa.Column('acompañmiento_type', sa.String(length=50), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('beverages',
@@ -31,7 +31,7 @@ def upgrade():
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('price', sa.Float(precision=2), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=True),
-    sa.Column('type', sa.String(length=50), nullable=True),
+    sa.Column('beverage_type', sa.String(length=50), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('hamburgers',
@@ -39,10 +39,7 @@ def upgrade():
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('price', sa.Float(precision=2), nullable=False),
     sa.Column('description', sa.String(length=255), nullable=True),
-    sa.Column('is_vegetarian', sa.Boolean(), nullable=True),
-    sa.Column('type', sa.String(length=50), nullable=True),
-    sa.Column('cheese_type', sa.String(length=50), nullable=False),
-    sa.Column('has_tofu', sa.Boolean(), nullable=True),
+    sa.Column('hamburger_type', sa.String(length=50), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
@@ -50,6 +47,8 @@ def upgrade():
     sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('email', sa.String(length=50), nullable=False),
     sa.Column('password', sa.String(length=50), nullable=False),
+    sa.Column('date_of_birth', sa.Date(), nullable=True),
+    sa.Column('cell_phone', sa.String(length=50), nullable=True),
     sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')

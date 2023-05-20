@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, DateTime
+from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, DateTime, Date
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -12,6 +12,8 @@ class User(db.Model):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(50), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    cell_phone = db.Column(db.String(50), nullable=True)
     is_admin = db.Column(db.Boolean(), default=False)
 
 
@@ -23,7 +25,9 @@ class User(db.Model):
             'id': self.id,
             'name': self.name,
             'email': self.email,
-            'is_admin': self.is_admin
+            'date_of_birth': str(self.date_of_birth),
+            'is_admin': self.is_admin,
+            'cell_phone': self.cell_phone
         }
     
 class Hamburger(db.Model):
@@ -32,28 +36,19 @@ class Hamburger(db.Model):
     name = db.Column(db.String(50), nullable=False)
     price = db.Column(db.Float(precision=2), nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    is_vegetarian = db.Column(db.Boolean, default=False)
-    type = db.Column(db.String(50))
+    hamburger_type = db.Column(db.String(50), nullable=False)
 
-    __mapper_args__ = {
-        'polymorphic_on': type,
-        'polymorphic_identity': 'hamburger'
-    }
-
-
-class Cheeseburger(Hamburger):
-    __mapper_args__ = {
-        'polymorphic_identity': 'cheeseburger'
-    }
-    cheese_type = db.Column(db.String(50), nullable=False)
-
-
-class VeggieBurger(Hamburger):
-    __mapper_args__ = {
-        'polymorphic_identity': 'veggieburger'
-    }
-    has_tofu = db.Column(db.Boolean, default=False)
-
+    def __repr__(self):
+        return f'<Hamburger {self.id}: {self.name}>'
+    
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'description': self.description,
+            'hamburger_type': self.hamburger_type
+        }
 
 class Beverage(db.Model):
     __tablename__ = 'beverages'
@@ -61,13 +56,7 @@ class Beverage(db.Model):
     name = db.Column(db.String(50), nullable=False)
     price = db.Column(db.Float(precision=2), nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    type = db.Column(db.String(50))
-
-    __mapper_args__ = {
-        'polymorphic_on': type,
-        'polymorphic_identity': 'beverage'
-    }
-
+    beverage_type = db.Column(db.String(50), nullable=True)
 
 class Acompañamientos(db.Model):
     __tablename__ = 'acompañamientos'
@@ -75,25 +64,7 @@ class Acompañamientos(db.Model):
     size = db.Column(db.String(50), nullable=False)
     price = db.Column(db.Float(precision=2), nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    type = db.Column(db.String(50))
-
-    __mapper_args__ = {
-        'polymorphic_on': type,
-        'polymorphic_identity': 'acompañamientos'
-    }
-
-
-class OnionRings(Acompañamientos):
-    __mapper_args__ = {
-        'polymorphic_identity': 'onion_rings'
-    }
-
-
-class FrenchFries(Acompañamientos):
-    __mapper_args__ = {
-        'polymorphic_identity': 'french_fries'
-    }
-
+    acompañmiento_type = db.Column(db.String(50), nullable=True)
 
 class Order(db.Model):
     __tablename__ = 'orders'
@@ -121,9 +92,10 @@ class Order(db.Model):
             'beverage': self.beverage.name,
             'price': self.hamburger.price + self.acompañamiento.price + self.beverage.price,
             'quantity': self.quantity,
-            'created_at': self.created_at
+            'created_at': str(self.created_at)
         }
 
 #alta cohesion y acoplamiento
 #principio de atomicidad
 #lo mas indivisible posible perfect
+#deberia crear clases de ingredientes?
