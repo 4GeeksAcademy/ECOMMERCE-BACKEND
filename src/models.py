@@ -93,6 +93,20 @@ class FrenchFries(Acompañamientos):
     __mapper_args__ = {
         'polymorphic_identity': 'french_fries'
     }
+@app.route('/acompañamiento', methods=['POST'])
+def create_acompañamiento():
+name = request.json.get('name')
+price = request.json.get('price')
+description = request.json.get('description')
+acompañamiento_type = request.json.get('acompañamiento_type')
+
+acompañamiento = Acompañamiento(name=name, price=price, description=description, acompañamiento_type=acompañamiento_type)
+db.session.add(acompañamiento)
+db.session.commit()
+
+return jsonify(acompañamiento.serialize()), 201
+
+
 
 
 class Order(db.Model):
@@ -127,3 +141,37 @@ class Order(db.Model):
 #alta cohesion y acoplamiento
 #principio de atomicidad
 #lo mas indivisible posible perfect
+
+@app.route('/beverages', methods=['POST'])
+def create_beverage():
+    # Obtener los datos de la bebida del cuerpo de la solicitud
+    name = request.json.get('name')
+    price = request.json.get('price')
+    description = request.json.get('description')
+    beverage_type = request.json.get('beverage_type')
+
+    beverage = None
+
+    if beverage_type == 'COCA':
+        beverage = Coca(name=name, price=price, description=description)
+    elif beverage_type == 'SPRITE':
+        beverage = Sprite(name=name, price=price, description=description)
+    elif beverage_type == 'FANTA':
+        beverage = Fanta(name=name, price=price, description=description)
+    elif beverage_type == 'NORDIC':
+        beverage = Nordic(name=name, price=price, description=description)
+    elif beverage_type == 'INKA KOLA':
+        beverage = InkaKola(name=name, price=price, description=description)
+    elif beverage_type == 'AGUAS':
+        beverage = Agua(name=name, price=price, description=description)
+    elif beverage_type == 'BENEDICTINO':
+        beverage = Benedictino(name=name, price=price, description=description)
+    elif beverage_type == 'AQUARIUS':
+        beverage = Aquarius(name=name, price=price, description=description)
+
+    if beverage:
+        db.session.add(beverage)
+        db.session.commit()
+        return jsonify(beverage.serialize()), 201
+    else:
+        return jsonify({'error': 'Tipo de bebida inválido'}), 400
