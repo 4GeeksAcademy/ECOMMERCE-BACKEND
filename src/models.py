@@ -29,7 +29,8 @@ class User(db.Model):
             'is_admin': self.is_admin,
             'cell_phone': self.cell_phone
         }
-    
+#agregar apellido
+
 class Hamburger(db.Model):
     __tablename__ = 'hamburgers'
     id = db.Column(db.Integer, primary_key=True)
