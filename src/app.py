@@ -161,8 +161,10 @@ def update_hamburger(hamburger_id):
     # Save the changes to the Database
     db.session.commit()
 
-    return jsonify(hamburger.serialize()), 200
-
+    return jsonify({
+        'message': 'Hamburger updated sucessfully',
+        'hamburger': hamburger.serialize()
+    }), 200
 
 
 # ROUTE FOR BEVERAGES (GET, POST, PUT)
@@ -201,7 +203,10 @@ def update_beverage(beverage_id):
     # Save the changes to the Database
     db.session.commit()
 
-    return jsonify(beverage.serialize()), 200
+    return jsonify({
+        'message': 'Beverage updated sucessfully',
+        'beverage': beverage.serialize()
+    }), 200
 
 # ROUTES FOR ACOMPAÑAMIENTOS (GET, POST, PUT)
 
@@ -223,9 +228,9 @@ def create_acompañmientos():
     db.session.commit()
     return jsonify(acompañamiento.serialize()), 201
 
-@app.route('/acompañamientos/<int:acompañamiento_id',methods=['PUT'])
-def update_acompañamiento(acompañamiento_id):
-    acompañamiento = Acompañamientos.query.get(acompañamiento_id)
+@app.route('/acompañamientos/<int:acompanamiento_id>',methods=['PUT'])
+def update_acompanamiento(acompanamiento_id):
+    acompañamiento = Acompañamientos.query.get(acompanamiento_id)
     if not acompañamiento:
         return jsonify({'error': 'Acompañamiento not found'}), 404
 
@@ -239,7 +244,10 @@ def update_acompañamiento(acompañamiento_id):
     # Save the cambios to the basedatos wey
     db.session.commit()
 
-    return jsonify(acompañamiento.serialize()), 200
+    return jsonify({
+        'message': 'Acompañamiento updated sucessfully',
+        'acompañamiento':acompañamiento.serialize()
+    }), 200
 
 # RUTAS PARA SIGN UP Y LOGIN (FALTA REESTABLECER CONTRASEÑA)
 

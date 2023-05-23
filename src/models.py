@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, DateTime, Date
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import backref
 
 db = SQLAlchemy()
 
@@ -66,14 +67,43 @@ class Acompañamientos(db.Model):
     size = db.Column(db.String(50), nullable=False)
     price = db.Column(db.Float(precision=2), nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    acompañmiento_type = db.Column(db.String(50), nullable=True)
+    acompañamiento_type = db.Column(db.String(50), nullable=True)
 
+
+
+#TABLAS INTERMEDIARIAS
+
+# Intermediate table for hamburgers in an order
+order_hamburger = db.Table(
+    'order_hamburger',
+    db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
+    db.Column('hamburger_id', db.Integer, db.ForeignKey('hamburgers.id'), primary_key=True),
+    db.Column('quantity', db.Integer, default=1)
+)
+
+# Intermediate table for beverages in an order
+order_beverage = db.Table(
+    'order_beverage',
+    db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
+    db.Column('beverage_id', db.Integer, db.ForeignKey('beverages.id'), primary_key=True),
+    db.Column('quantity', db.Integer, default=1)
+)
+
+# Intermediate table for acompañamientos in an order
+order_acompañamiento = db.Table(
+    'order_acompañamiento',
+    db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
+    db.Column('acompañamiento_id', db.Integer, db.ForeignKey('acompañamientos.id'), primary_key=True),
+    db.Column('quantity', db.Integer, default=1)
+)
+
+   
 class Order(db.Model):
     __tablename__ ='orders'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
-    user = db.relationship('User')
+    user = db.relationship('User', backref='orders')
 
     hamburgers = db.relationship('Hamburger', secondary=order_hamburger, backref='orders')
     beverages = db.relationship('Beverage', secondary=order_beverage, backref='orders')
@@ -106,7 +136,8 @@ class Order(db.Model):
         acompañamiento_quantity = sum(quantity for _, quantity in self.acompañamientos)
 
         return hamburger_quantity + beverage_quantity + acompañamiento_quantity
-   
+
+
 #alta cohesion y acoplamiento
 #principio de atomicidad
 #lo mas indivisible posible perfect
