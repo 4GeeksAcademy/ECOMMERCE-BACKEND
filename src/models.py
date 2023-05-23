@@ -10,6 +10,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
+    apellido = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(50), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=True)
@@ -68,34 +69,44 @@ class Acompañamientos(db.Model):
     acompañmiento_type = db.Column(db.String(50), nullable=True)
 
 class Order(db.Model):
-    __tablename__ = 'orders'
+    __tablename__ ='orders'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    hamburger_id = db.Column(db.Integer, db.ForeignKey('hamburgers.id'), nullable=False)
-    acompañamiento_id = db.Column(db.Integer, db.ForeignKey('acompañamientos.id'), nullable=True)
-    beverage_id =  db.Column(db.Integer, db.ForeignKey('beverages.id'), nullable=True)
-    quantity = db.Column(db.Integer, default=1)
+    user_id = db.Column(db.Integer, db.ForeignKey('users_id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
     user = db.relationship('User')
-    beverage = db.relationship('Beverage')
-    hamburger = db.relationship('Hamburger')
-    acompañamiento = db.relationship('Acompañamientos')
+
+    hamburgers = db.relationship('Hamburger', secondary=order_hamburger, backref='orders')
+    beverages = db.relationship('Beverage', secondary=order_beverage, backref='orders')
+    acompañamientos = db.relationship('Acompañamientos', secondary=order_acompañamiento, backref='orders')
 
     def __repr__(self):
-        return f'<Order {self.id}: {self.user.name} ordered {self.quantity} {self.hamburger.name}s with {self.acompañamiento.size} acompañamientos and a {self.beverage.name}>'
-
+        return f'<Order {self.id}: {self.user.name} ordered {self.get_total_quantity()} items>'
+    
     def serialize(self):
+        hamburgers = [{'id':hamburger.id, 'name': hamburger.name, 'quantity': quantity}
+                        for hamburger, quantity in self.hamburgers]
+        beverages = [{'id':beverage.id, 'name': beverage.name, 'quantity': quantity }
+                        for beverage, quantity in self.beverages]
+        acompañamientos = [{'id':acompañamiento.id, 'name': acompañamientos.name, 'quantity': quantity}
+                        for acompañamientos, quantity in self.acompañamientos]
+        
         return {
             'id': self.id,
-            'user': self.user.name,
-            'hamburger': self.hamburger.name,
-            'acomp': self.acompañamiento.size,
-            'beverage': self.beverage.name,
-            'price': self.hamburger.price + self.acompañamiento.price + self.beverage.price,
-            'quantity': self.quantity,
-            'created_at': str(self.created_at)
+            'user': self.user.serialize(),
+            'hamburgers': hamburgers,
+            'beverages': beverages,
+            'acompañamientos': acompañamientos,
+            'created_at': self.created_at,
+            'total_quantity': self.get_total_quantity()
         }
 
+    def get_total_quantity(self):
+        hamburger_quantity = sum(quantity for _, quantity in self.hamburgers)
+        beverage_quantity = sum(quantity for _, quantity in self.beverages)
+        acompañamiento_quantity = sum(quantity for _, quantity in self.acompañamientos)
+
+        return hamburger_quantity + beverage_quantity + acompañamiento_quantity
+   
 #alta cohesion y acoplamiento
 #principio de atomicidad
 #lo mas indivisible posible perfect

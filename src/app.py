@@ -81,6 +81,7 @@ def get_user(email):
         user_data = {
             'name': user.name,
             'email': user.email,
+            'apellido': user.apellido,
             'password': user.password,
             'cell_phone': user.cell_phone,
             'date_of_birth': user.date_of_birth.strftime('%Y-%m-%d')
@@ -117,8 +118,6 @@ def create_order():
     db.session.commit()
     return jsonify(order.serialize()), 201
 
-# si Q se refiere a cada una, o a la orden en si.
-
 # Rutas para manejar las hamburguesas, beverages y acompañamientos
 
 
@@ -145,7 +144,29 @@ def create_hamburger():
     return jsonify(hamburger.serialize()), 201
 
 
-# Route for getting all beverages
+
+@app.route('/hamburgers/<int:hamburger_id>', methods=['PUT'])
+def update_hamburger(hamburger_id):
+    hamburger = Hamburger.query.get(hamburger_id)
+    if not hamburger:
+        return jsonify({'error': 'Hamburger not Found'}), 404
+    
+    # Update the attributes of the hamburger
+
+    hamburger.name = request.json.get('name', hamburger.name) 
+    hamburger.price = request.json.get('price', hamburger.price)
+    hamburger.description = request.json.get('description', hamburger.description)
+    hamburger.hamburger_type = request.json.get('hamburger_type', hamburger.hamburger_type)
+
+    # Save the changes to the Database
+    db.session.commit()
+
+    return jsonify(hamburger.serialize()), 200
+
+
+
+# ROUTE FOR BEVERAGES (GET, POST, PUT)
+
 @app.route('/beverages', methods=['GET'])
 def get_all_beverages():
     beverages = Beverage.query.all()
@@ -165,8 +186,25 @@ def create_beverages():
     db.session.commit()
     return jsonify(beverage.serialize()), 201
 
+@app.route('/beverages/<int:beverage_id>', methods=['PUT'])
+def update_beverage(beverage_id):
+    beverage = Beverage.query.get(beverage_id)
+    if not beverage:
+        return jsonify({'error': 'Beverage not found'}), 404
+    
+    # Update the attribute  of the beverage 
+    beverage.name = request.json.get('name', beverage.name)
+    beverage.price = request.json.get('price', beverage.price)
+    beverage.description = request.json.get('description', beverage.description)
+    beverage.hamburger_type = request.json.get('beverage_type', beverage.beverage_type)
 
-# Route for getting all acompañamientos
+    # Save the changes to the Database
+    db.session.commit()
+
+    return jsonify(beverage.serialize()), 200
+
+# ROUTES FOR ACOMPAÑAMIENTOS (GET, POST, PUT)
+
 @app.route('/acomp', methods=['GET'])
 def get_all_acompañamientos():
     acompañamientos = Acompañamientos.query.all()
@@ -185,10 +223,25 @@ def create_acompañmientos():
     db.session.commit()
     return jsonify(acompañamiento.serialize()), 201
 
+@app.route('/acompañamientos/<int:acompañamiento_id',methods=['PUT'])
+def update_acompañamiento(acompañamiento_id):
+    acompañamiento = Acompañamientos.query.get(acompañamiento_id)
+    if not acompañamiento:
+        return jsonify({'error': 'Acompañamiento not found'}), 404
 
+    # Update the attributes of the acompañamiento
 
-# rutas por crear: CREATE HAMBURGER, CRREATE BEBIDA, CREATE ACOMPAÑAMIENTO.
-# PLUS: CREAR POSTRES
+    acompañamiento.name = request.json.get('name', acompañamiento.name)
+    acompañamiento.price = request.json.get('price', acompañamiento.price)
+    acompañamiento.description = request.json.get('description', acompañamiento.description)
+    acompañamiento.acompañamiento_type = request.json.get('acompañamiento_type', acompañamiento.beverage_type)
+
+    # Save the cambios to the basedatos wey
+    db.session.commit()
+
+    return jsonify(acompañamiento.serialize()), 200
+
+# RUTAS PARA SIGN UP Y LOGIN (FALTA REESTABLECER CONTRASEÑA)
 
 @app.route('/signup', methods=['POST'])
 def signup():
