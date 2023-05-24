@@ -11,6 +11,7 @@ from admin import setup_admin
 from models import db, User, Hamburger, Beverage, Acompañamientos, Order
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
+import re
 
 # from models import Person
 
@@ -91,6 +92,45 @@ def get_user(email):
     else:
         return jsonify({'error': 'User not found'}), 404
 
+@app.route('/edit_users/<string:email>', methods=['PUT'])
+def email_validity_check(email):
+    # Regular expression pattern for email validation
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return re.match(pattern, email) is not None
+
+def edit_user(email):
+    # Check if the email is valid
+    if not email_validity_check(email):
+        return jsonify({'error': 'Invalid email format'}), 400
+    
+    # Check if the email exists in the database
+    user = User.query.filter_by(email=email.first())
+
+    # If email exists, continue with the user update logic
+
+    if user:
+        user.name = request.json.get('name', user.name)
+        user.apellido = request.json.get('apellido', user.apellido)
+        user.cell_phone = request.json.get('cell_phone', user.cell_phone)
+        date_of_birth = request.json.get('date_of_birth')
+        if date_of_birth:
+            user.date_of_birth = datetime.strptime(date_of_birth, '%Y-%m-%d'.date())
+
+        db.session.commit()
+
+        user_data = {
+            'name': user.name,
+            'email': user.email,
+            'appelido': user.apellido,
+            'cell_phone': user.cell_phone,
+            'date_of_birth': user.date_of_birth.strftime('%Y-%m-%d')
+        }
+        return jsonify(user_data), 200
+    
+    else:
+        return jsonify({'error': 'User not found'}), 404
+
+        
 # Route for getting all orders
 
 
@@ -99,7 +139,6 @@ def get_all_orders():
     orders = Order.query.filter_by(created_at=datetime.now).all()
     return jsonify([order.serialize() for order in orders]), 200
 
-# agregar query filter by date.
 
 # Route for creating a new order
 
