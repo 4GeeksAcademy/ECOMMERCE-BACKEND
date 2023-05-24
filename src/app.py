@@ -216,7 +216,7 @@ def get_all_acompañamientos():
     return jsonify([acompañamiento.serialize() for acompañamiento in acompañamientos]), 200
 
 @app.route('/crear_acomp', methods=['POST'])
-def create_acompañmientos():
+def create_acompañamientos():
     name = request.json.get('name')
     price = request.json.get('price')
     description = request.json.get('description')
