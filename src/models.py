@@ -110,6 +110,7 @@ class Order_Hamburger(db.Model):
 
 # Intermediate table for beverages in an order
 class Order_Beverage(db.Model):
+    __tablename__= 'order_beverage'
     id = db.Column(db.Integer, primary_key=True)
     beverage_id = db.Column(db.Integer,db.ForeignKey("beverages.id"))
     quantity =  db.Column(db.Integer, default=1)
@@ -125,6 +126,7 @@ class Order_Acompañamiento(db.Model):
     acompañamiento_id = db.Column(db.Integer,db.ForeignKey("acompañamientos.id"))
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
     quantity =  db.Column(db.Integer, default=1)
+    rel_acompañamientos = db.relationship('Acompañamientos')
     acompañamientos = db.relationship('Order')
 
 

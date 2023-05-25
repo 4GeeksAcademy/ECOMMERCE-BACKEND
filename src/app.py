@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Hamburger, Beverage, Acompañamientos, Order
+from models import db, User, Hamburger, Beverage, Acompañamientos, Order, Order_Hamburger, Order_Acompañamiento, Order_Beverage
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
 import re
@@ -142,15 +142,50 @@ def get_all_orders():
 
 # Route for creating a new order
 
-
-@app.route('/orders', methods=['POST'])
+@app.route('/create/order', methods=['POST'])
 def create_order():
     user_id = request.json.get('user_id')
-    hamburger_id = request.json.get('hamburger_id')
-    acompañamiento_id = request.json.get('acompañamiento_id')
+    hamburgers = request.json.get('hamburgers', [])  # List of hamburger items
+    acompañamientos = request.json.get('acompañamientos', [])  # List of acompañamiento items
+    beverages = request.json.get('beverages', [])  # List of beverage items
+
+    order = Order(user_id=user_id)
+
+    # Add hamburgers to the order
+    for hamburger in hamburgers:
+        hamburger_id = hamburger.get('hamburgers_id')
+        quantity = hamburger.get('quantity')
+        order_hamburger = Order_Hamburger(hamburgers_id=hamburger_id, quantity=quantity)
+        order.hamburgers.append(order_hamburger)
+
+    # Add acompañamientos to the order
+    for acompañamiento in acompañamientos:
+        acompañamiento_id = acompañamiento.get('acompañamientos_id')
+        quantity = acompañamiento.get('quantity')
+        order_acompañamiento = Order_Acompañamiento(acompañamiento_id=acompañamiento_id, quantity=quantity)
+        order.acompañamientos.append(order_acompañamiento)
+
+    # Add beverages to the order
+    for beverage in beverages:
+        beverage_id = beverage.get('beverages_id')
+        quantity = beverage.get('quantity')
+        order_beverage = Order_Beverage(beverage_id=beverage_id, quantity=quantity)
+        order.beverages.append(order_beverage)
+
+    db.session.add(order)
+    db.session.commit()
+
+    return jsonify(order.serialize()), 201
+
+"""
+@app.route('/create/order', methods=['POST'])
+def create_order():
+    user_id = request.json.get('user_id')
+    hamburger_id = request.json.get('hamburgers_id')
+    acompañamiento_id = request.json.get('acompañamientos_id')
     beverage_id = request.json.get('beverage_id')
     quantity = request.json.get('quantity')
-    created_at = datetime.now()
+    created_at = datetime.datetime.now()
     order = Order(user_id=user_id, hamburger_id=hamburger_id, acompañamiento_id=acompañamiento_id,
                   beverage_id=beverage_id, quantity=quantity, created_at=created_at)
     db.session.add(order)
@@ -158,7 +193,7 @@ def create_order():
     return jsonify(order.serialize()), 201
 
 # Rutas para manejar las hamburguesas, beverages y acompañamientos
-
+"""
 
 @app.route('/hamburgers', methods=['GET'])
 def get_hamburgers():
