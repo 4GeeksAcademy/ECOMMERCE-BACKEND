@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, DateTime, Date
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import backref
+
 
 db = SQLAlchemy()
 
@@ -139,10 +139,17 @@ class Order(db.Model):
     user = db.relationship('User')
 
     
-
+   
     def __repr__(self):
         return f'<Order {self.id}: {self.user.name} ordered {self.get_total_quantity()} items>'
-    
+
+    def serialize(self):
+        return {
+            "id":self.id,
+            "user_id":self.user_id,
+            "created_at": self.created_at
+        }
+"""
     def serialize(self):
         hamburgers = [{'id':hamburger.id, 'name': hamburger.name, 'quantity': quantity}
                         for hamburger, quantity in self.hamburgers]
@@ -167,7 +174,7 @@ class Order(db.Model):
         acompañamiento_quantity = sum(quantity for _, quantity in self.acompañamientos)
 
         return hamburger_quantity + beverage_quantity + acompañamiento_quantity
-
+"""
 
 # alta cohesion y acoplamiento
 # principio de atomicidad

@@ -8,29 +8,27 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Hamburger, Beverage, Acompañamientos, Order, Order_Hamburger, Order_Acompañamiento, Order_Beverage
+from models import db, User, Order , Order_Hamburger, Order_Beverage, Order_Acompañamiento, Hamburger, Beverage, Acompañamientos
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
 import re
 
 # from models import Person
 
-ENV = os.getenv("FLASK_ENV")
-static_file_dir = os.path.join(os.path.dirname(
-    os.path.realpath(__file__)), '../public/')
 app = Flask(__name__)
 app.url_map.strict_slashes = False
-jwt = JWTManager(app)
-db_url = os.getenv("DATABASE_URL")
 
+db_url = os.getenv("DATABASE_URL")
 if db_url is not None:
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
-        "postgres://", "postgresql://")
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace("postgres://", "postgresql://")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-MIGRATE = Migrate(app, db, compare_type=True)
+
+MIGRATE = Migrate(app, db)
 db.init_app(app)
+CORS(app)
+
 
 # Allow CORS requests to this API
 CORS(app)
@@ -63,16 +61,68 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
+#######################ORDENES################################
+
+# Route for getting all orders
+@app.route('/orders', methods=['GET'])
+def get_all_orders():
+    orders = Order.query.all()
+    return jsonify([order.serialize() for order in orders]), 200
+
+
+@app.route('/create/order', methods=['POST'])
+def new_order():
+    user_id = request.json.get('user_id')
+    hamburgers = request.json.get('hamburgers', [])  # List of hamburger items
+    acompañamientos = request.json.get('acompañamientos', [])  # List of acompañamiento items
+    beverages = request.json.get('beverages', [])  # List of beverage items
+
+    order = Order(user_id=user_id, created_at= datetime.datetime.now())
+    db.session.add(order)
+    db.session.commit()
+
+    order_id  = int(order.id)
+    #Add hamburgers to the order
+    
+    for hamburger in hamburgers:
+            hamburger_id = hamburger.get('hamburger_id')
+            quantity = hamburger.get('quantity')
+            order_hamburger = Order_Hamburger(hamburgers_id=hamburger_id, quantity=quantity, order_id=order_id)
+            db.session.add(order_hamburger)
+            db.session.commit()
+            
+
+    # Add acompañamientos to the order
+    for acompañamiento in acompañamientos:
+        acompañamiento_id = acompañamiento.get('acompañamientos_id')
+        quantity = acompañamiento.get('quantity')
+        order_acompañamiento = Order_Acompañamiento(acompañamiento_id=acompañamiento_id, quantity=quantity, order_id=order_id)
+        db.session.add(order_acompañamiento)
+        db.session.commit()
+
+    # Add beverages to the order
+    for beverage in beverages:
+        beverage_id = beverage.get('beverages_id')
+        quantity = beverage.get('quantity')
+        order_beverage = Order_Beverage(beverage_id=beverage_id, quantity=quantity, order_id=order_id)
+        db.session.add(order_beverage)
+        db.session.commit()
+
+    
+
+    return jsonify(order.serialize()), 201
+
+
+#######################FIN ORDENES#############################
+
 # Rutas para manejar usuarios
-
-
 @app.route('/users', methods=['GET'])
 def get_users():
     # Obtener todos los usuarios de la base de datos
     users = User.query.all()
     user_list = [user.serialize() for user in users]
     return jsonify(user_list), 200
-
+"""
 @app.route('/users/<string:email>', methods=['GET'])
 def get_user(email):
     # Retrieve the user from the database based on the provided email
@@ -91,6 +141,29 @@ def get_user(email):
 
     else:
         return jsonify({'error': 'User not found'}), 404
+"""
+
+@app.route('/privada', methods=['GET', 'PUT'])
+@jwt_required()
+def privada():
+    identidad = get_jwt_identity()
+    user = User.query.filter_by(email=identidad).first()
+
+    if request.method == 'PUT':
+        # Obtener los datos enviados en el cuerpo de la solicitud
+        body = request.get_json()
+
+        # Actualizar los datos del usuario
+        user.name = body["name"]
+        user.cell_phone = body["cell_phone"]
+        user.date_of_birth = body["date_of_birth"]
+        # Guardar los cambios en la base de datos
+        db.session.commit()
+        return jsonify({"user": user.serialize()})
+
+    # Devolver los datos actualizados del usuario
+    return jsonify({"user": user.serialize()})
+
 
 @app.route('/edit_users/<string:email>', methods=['PUT'])
 def email_validity_check(email):
@@ -130,55 +203,8 @@ def edit_user(email):
     else:
         return jsonify({'error': 'User not found'}), 404
 
-        
-# Route for getting all orders
 
-
-@app.route('/orders', methods=['GET'])
-def get_all_orders():
-    orders = Order.query.filter_by(created_at=datetime.now).all()
-    return jsonify([order.serialize() for order in orders]), 200
-
-
-# Route for creating a new order
-
-@app.route('/create/order', methods=['POST'])
-def create_order():
-    user_id = request.json.get('user_id')
-    hamburgers = request.json.get('hamburgers', [])  # List of hamburger items
-    acompañamientos = request.json.get('acompañamientos', [])  # List of acompañamiento items
-    beverages = request.json.get('beverages', [])  # List of beverage items
-
-    order = Order(user_id=user_id)
-
-    # Add hamburgers to the order
-    for hamburger in hamburgers:
-        hamburger_id = hamburger.get('hamburgers_id')
-        quantity = hamburger.get('quantity')
-        order_hamburger = Order_Hamburger(hamburgers_id=hamburger_id, quantity=quantity)
-        order.hamburgers.append(order_hamburger)
-
-    # Add acompañamientos to the order
-    for acompañamiento in acompañamientos:
-        acompañamiento_id = acompañamiento.get('acompañamientos_id')
-        quantity = acompañamiento.get('quantity')
-        order_acompañamiento = Order_Acompañamiento(acompañamiento_id=acompañamiento_id, quantity=quantity)
-        order.acompañamientos.append(order_acompañamiento)
-
-    # Add beverages to the order
-    for beverage in beverages:
-        beverage_id = beverage.get('beverages_id')
-        quantity = beverage.get('quantity')
-        order_beverage = Order_Beverage(beverage_id=beverage_id, quantity=quantity)
-        order.beverages.append(order_beverage)
-
-    db.session.add(order)
-    db.session.commit()
-
-    return jsonify(order.serialize()), 201
-
-"""
-@app.route('/create/order', methods=['POST'])
+@app.route('/created/order', methods=['POST'])
 def create_order():
     user_id = request.json.get('user_id')
     hamburger_id = request.json.get('hamburgers_id')
@@ -193,7 +219,7 @@ def create_order():
     return jsonify(order.serialize()), 201
 
 # Rutas para manejar las hamburguesas, beverages y acompañamientos
-"""
+
 
 @app.route('/hamburgers', methods=['GET'])
 def get_hamburgers():
@@ -254,10 +280,10 @@ def create_beverages():
     name = request.json.get('name')
     price = request.json.get('price')
     description = request.json.get('description')
-    beverages_type = request.json.get('beverages_type')
+    beverage_type = request.json.get('beverage_type')
 
     beverage = Beverage(name=name, price=price,
-                        description=description, beverages_type=beverages_type)
+                        description=description, beverage_type=beverage_type)
     db.session.add(beverage)
     db.session.commit()
     return jsonify(beverage.serialize()), 201
@@ -292,17 +318,18 @@ def get_all_acompañamientos():
 @app.route('/crear_acomp', methods=['POST'])
 def create_acompañamientos():
     name = request.json.get('name')
+    size = request.json.get('size')
     price = request.json.get('price')
     description = request.json.get('description')
     acompañamiento_type = request.json.get('acompañamiento_type')
 
     acompañamiento = Acompañamientos(name=name, price=price,
-                        description=description, acompañamiento_type=acompañamiento_type)
+                        description=description, acompañamiento_type=acompañamiento_type, size=size)
     db.session.add(acompañamiento)
     db.session.commit()
     return jsonify(acompañamiento.serialize()), 201
 
-@app.route('/acompañamientos/<int:acompanamiento_id>',methods=['PUT'])
+@app.route('/acompañamientos/<int:acompanamientos_id>', methods=['PUT'])
 def update_acompanamiento(acompanamiento_id):
     acompañamiento = Acompañamientos.query.get(acompanamiento_id)
     if not acompañamiento:
@@ -312,6 +339,7 @@ def update_acompanamiento(acompanamiento_id):
 
     acompañamiento.name = request.json.get('name', acompañamiento.name)
     acompañamiento.price = request.json.get('price', acompañamiento.price)
+    acompañamiento.size = request.json.get('size', acompañamiento.size)
     acompañamiento.description = request.json.get('description', acompañamiento.description)
     acompañamiento.acompañamiento_type = request.json.get('acompañamiento_type', acompañamiento.beverage_type)
 

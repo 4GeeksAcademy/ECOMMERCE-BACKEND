@@ -1,6 +1,6 @@
 import os
 from flask_admin import Admin
-from models import db, User, Hamburger, Beverage, Acompañamientos, Order, Order_Hamburger, Order_Beverage, Order_Acompañamiento
+from models import db, User, Order, Order_Hamburger, Order_Beverage, Order_Acompañamiento, Hamburger, Beverage, Acompañamientos
 from flask_admin.contrib.sqla import ModelView
 
 def setup_admin(app):
