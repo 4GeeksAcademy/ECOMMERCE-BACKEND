@@ -28,7 +28,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
-
+jwt=JWTManager(app)
 
 # Allow CORS requests to this API
 CORS(app)
@@ -245,7 +245,7 @@ def create_hamburger():
 
 
 
-@app.route('/hamburgers/<int:hamburger_id>', methods=['PUT'])
+@app.route('/hamburgers/<int:hamburger_id>', methods=['GET', 'PUT'])
 def update_hamburger(hamburger_id):
     hamburger = Hamburger.query.get(hamburger_id)
     if not hamburger:
@@ -329,7 +329,7 @@ def create_acompañamientos():
     db.session.commit()
     return jsonify(acompañamiento.serialize()), 201
 
-@app.route('/acompañamientos/<int:acompanamientos_id>', methods=['PUT'])
+@app.route('/acompañamientos/<int:acompanamientos_id>', methods=['GET','PUT'])
 def update_acompanamiento(acompanamiento_id):
     acompañamiento = Acompañamientos.query.get(acompanamiento_id)
     if not acompañamiento:
@@ -376,7 +376,7 @@ def login():
     user = User.query.filter_by(email=body['email']).first()
     if user:
         if user.password == body["password"]:
-            expire = datetime.timedelta(minutes=1)
+            expire = datetime.timedelta(minutes=5)
             token = create_access_token(
                 identity=user.email, expires_delta=expire)
             if user.is_admin:
@@ -385,12 +385,6 @@ def login():
                     "msg": "Admin login successful",
                     "token": token,
                     "exp": expire.total_seconds(),
-                    "user": {
-                        "name": user.name,
-                        "email": user.email,
-                        "cell_phone": user.cell_phone,
-                        "date_of_birth": user.date_of_birth.strftime("%Y-%m-%d")
-                    }
                 })
             else:
                 # Perform regular user login actions
@@ -398,12 +392,6 @@ def login():
                     "msg": "User login successful",
                     "token": token,
                     "exp": expire.total_seconds(),
-                    "user": {
-                        "name": user.name,
-                        "email": user.email,
-                        "cell_phone": user.cell_phone,
-                        "date_of_birth": user.date_of_birth.strftime("%Y-%m-%d")
-                    }
                 })
         else:
             return jsonify({
