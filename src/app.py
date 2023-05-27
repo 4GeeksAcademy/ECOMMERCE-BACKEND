@@ -250,13 +250,13 @@ def update_hamburger(hamburger_id):
     hamburger = Hamburger.query.get(hamburger_id)
     if not hamburger:
         return jsonify({'error': 'Hamburger not Found'}), 404
-    
+    if request.method == 'PUT':
     # Update the attributes of the hamburger
-
-    hamburger.name = request.json.get('name', hamburger.name) 
-    hamburger.price = request.json.get('price', hamburger.price)
-    hamburger.description = request.json.get('description', hamburger.description)
-    hamburger.hamburger_type = request.json.get('hamburger_type', hamburger.hamburger_type)
+    
+        hamburger.name = request.json.get('name', hamburger.name) 
+        hamburger.price = request.json.get('price', hamburger.price)
+        hamburger.description = request.json.get('description', hamburger.description)
+        hamburger.hamburger_type = request.json.get('hamburger_type', hamburger.hamburger_type)
 
     # Save the changes to the Database
     db.session.commit()
@@ -288,17 +288,17 @@ def create_beverages():
     db.session.commit()
     return jsonify(beverage.serialize()), 201
 
-@app.route('/beverages/<int:beverage_id>', methods=['PUT'])
+@app.route('/beverages/<int:beverage_id>', methods=['GET','PUT'])
 def update_beverage(beverage_id):
     beverage = Beverage.query.get(beverage_id)
     if not beverage:
         return jsonify({'error': 'Beverage not found'}), 404
-    
+    if request.method == 'PUT':
     # Update the attribute  of the beverage 
-    beverage.name = request.json.get('name', beverage.name)
-    beverage.price = request.json.get('price', beverage.price)
-    beverage.description = request.json.get('description', beverage.description)
-    beverage.hamburger_type = request.json.get('beverage_type', beverage.beverage_type)
+        beverage.name = request.json.get('name', beverage.name)
+        beverage.price = request.json.get('price', beverage.price)
+        beverage.description = request.json.get('description', beverage.description)
+        beverage.hamburger_type = request.json.get('beverage_type', beverage.beverage_type)
 
     # Save the changes to the Database
     db.session.commit()
@@ -329,19 +329,19 @@ def create_acompañamientos():
     db.session.commit()
     return jsonify(acompañamiento.serialize()), 201
 
-@app.route('/acompañamientos/<int:acompanamientos_id>', methods=['GET','PUT'])
+@app.route('/acompañamientos/<int:acompanamiento_id>', methods=['GET','PUT'])
 def update_acompanamiento(acompanamiento_id):
     acompañamiento = Acompañamientos.query.get(acompanamiento_id)
     if not acompañamiento:
         return jsonify({'error': 'Acompañamiento not found'}), 404
-
+    if request.method == 'PUT':
     # Update the attributes of the acompañamiento
 
-    acompañamiento.name = request.json.get('name', acompañamiento.name)
-    acompañamiento.price = request.json.get('price', acompañamiento.price)
-    acompañamiento.size = request.json.get('size', acompañamiento.size)
-    acompañamiento.description = request.json.get('description', acompañamiento.description)
-    acompañamiento.acompañamiento_type = request.json.get('acompañamiento_type', acompañamiento.beverage_type)
+        acompañamiento.name = request.json.get('name', acompañamiento.name)
+        acompañamiento.price = request.json.get('price', acompañamiento.price)
+        acompañamiento.size = request.json.get('size', acompañamiento.size)
+        acompañamiento.description = request.json.get('description', acompañamiento.description)
+        acompañamiento.acompañamiento_type = request.json.get('acompañamiento_type', acompañamiento.acompañamiento_type)
 
     # Save the cambios to the basedatos wey
     db.session.commit()
