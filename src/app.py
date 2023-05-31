@@ -12,9 +12,10 @@ from models import db, User, Order , Order_Hamburger, Order_Beverage, Order_Acom
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import datetime
 import re
+import requests
 
 # from models import Person
-
+key = os.environ.get('API_KEYS')
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
@@ -401,6 +402,49 @@ def login():
         return jsonify({
             "msg": "Wrong email or password. Please try again."
         }), 401
+
+@app.route('/procesar_pago', methods=['POST'])
+def procesar_pago():
+
+    url = "https://biz-sandbox.soymach.com/payments"  # URL de la API o servidor al que deseas hacer la petición
+
+    # Datos a enviar en la petición POST
+    payload = {
+    "payment": {
+    "amount": 1,
+    "message": "Cheese",
+    "title": "BURGERFLY",
+    "metadata": {
+    "product_id": "dd6af8f6-4ba0-47d9-8c38-a4313e08b456",
+    "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
+    }
+    }
+    }
+
+# Encabezados de la petición con el token de autorización
+    headers = {
+    "Authorization": key
+    }
+
+
+# Realizar la petición POST
+    response = requests.post(url, json=payload, headers=headers)
+
+# Verificar si la petición fue exitosa (código de estado 200)
+    if response.status_code == 200:
+    # Acceder al contenido de la respuesta
+        data = response.json()  # Si la respuesta es un JSON
+    # data = response.text  # Si la respuesta es texto plano
+        print(data["token"])
+        tok = data["token"]
+        resp = requests.get(f"https://biz-sandbox.soymach.com/payments/{tok}/qr", headers=headers)
+        mach_data = resp.json()
+        print(mach_data)
+        return jsonify(mach_data)
+    else:
+        print("Error en la petición:", response.status_code)
+
+
 
 
 # this only runs if `$ python src/app.py` is executed
