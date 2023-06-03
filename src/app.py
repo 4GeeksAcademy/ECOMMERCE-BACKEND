@@ -13,6 +13,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 import datetime
 import re
 import requests
+import bcrypt
 
 # from models import Person
 key = os.environ.get('API_KEYS')
@@ -399,6 +400,35 @@ def update_acompanamiento(acompanamiento_id):
 @app.route('/signup', methods=['POST'])
 def signup():
     body = request.get_json()
+    email = body['email']
+    password = body['password']
+    name = body['name']
+    apellido = body['apellido']
+    date_of_birth = body['date_of_birth']
+    cell_phone = body['cell_phone']
+
+    #validate email format
+    if not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+        return jsonify({"msg": "Invalid email format"})
+
+    # Validate password strength (at least 8 characters with letters and numbers)
+    if len(password) < 8 or not any (char.isdigit() for char in password) or not any(char.isalpha() for char in password):
+        return jsonify({"msg": "Password must be at least 8 characters long and contain both letters and numbers"})
+
+    # Validate name and apellido are not empty or blank
+    if not name or name.strip() == "":
+        return jsonify ({"msg": "Name is required"})
+
+    if not apellido or apellido.strip() == "":
+        return jsonify ({"msg": "Apellido is required"})
+
+    # Validate Phone Number (exactly 8 digits)
+    if not re.search(r'^\d{8}$', cell_phone):
+        return jsonify({"msg": "Invalid cell phone number format. it should contain exactly 8 digits."})
+
+    # Hash the password using bcrypt
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+          
     user = User.query.filter_by(email=body['email']).first()
     if not user:
         print(body)
