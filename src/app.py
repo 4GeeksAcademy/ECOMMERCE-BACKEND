@@ -178,14 +178,6 @@ def admin():
 
     return jsonify({"msg": "Access Denied. Admin privileges required."}), 403
 
-            
-
-
-
-
-
-
-
 @app.route('/privada', methods=['GET', 'PUT'])
 @jwt_required()
 def privada():
@@ -409,22 +401,22 @@ def signup():
 
     #validate email format
     if not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-        return jsonify({"msg": "Invalid email format"})
+        return jsonify({"msg": "Invalid email format"}), 400 
 
     # Validate password strength (at least 8 characters with letters and numbers)
     if len(password) < 8 or not any (char.isdigit() for char in password) or not any(char.isalpha() for char in password):
-        return jsonify({"msg": "Password must be at least 8 characters long and contain both letters and numbers"})
+        return jsonify({"msg": "Password must be at least 8 characters long and contain both letters and numbers"}), 400
 
     # Validate name and apellido are not empty or blank
     if not name or name.strip() == "":
-        return jsonify ({"msg": "Name is required"})
+        return jsonify ({"msg": "Name is required"}), 400
 
     if not apellido or apellido.strip() == "":
-        return jsonify ({"msg": "Apellido is required"})
+        return jsonify ({"msg": "Apellido is required"}), 400
 
     # Validate Phone Number (exactly 8 digits)
     if not re.search(r'^\d{8}$', cell_phone):
-        return jsonify({"msg": "Invalid cell phone number format. it should contain exactly 8 digits."})
+        return jsonify({"msg": "Invalid cell phone number format. it should contain exactly 8 digits."}), 400
 
     # Hash the password using bcrypt
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -436,11 +428,9 @@ def signup():
                         is_admin=False, date_of_birth=body['date_of_birth'], cell_phone=body['cell_phone'])
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({
-            "msg": "User was created",
-        })
+        return jsonify({"msg": "User was created"}), 200
     else:
-        return jsonify({"msg": "The email entered already has an associated account. Please Log in"})
+        return jsonify({"msg": "The email entered already has an associated account. Please Log in"}), 400
 
 
 @app.route("/login", methods=['POST'])
