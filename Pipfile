@@ -20,6 +20,7 @@ mysqlclient = "*"
 flask-admin = "*"
 flask-jwt-extended = "*"
 flask-login = "*"
+requests = "*"
 
 [requires]
 python_version = "3.10"
