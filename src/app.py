@@ -432,7 +432,7 @@ def signup():
     user = User.query.filter_by(email=body['email']).first()
     if not user:
         print(body)
-        new_user = User(email=body['email'], password=body['password'], name=body['name'], apellido=body['apellido'],
+        new_user = User(email=body['email'], password=body['hashed_password'], name=body['name'], apellido=body['apellido'],
                         is_admin=False, date_of_birth=body['date_of_birth'], cell_phone=body['cell_phone'])
         db.session.add(new_user)
         db.session.commit()
