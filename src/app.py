@@ -144,6 +144,47 @@ def get_user(email):
         return jsonify({'error': 'User not found'}), 404
 """
 
+# Admin Route
+@app.route('/admin', methods=['GET', 'PUT'])
+@jwt_required()
+def admin():
+    current_user = get_jwt_identity()
+    print(current_user)
+    if current_user and current_user ['is_admin']: #hacer un query filter by email
+        if request.method == 'PUT':
+            order_id = request.json.get('order_id')
+            # retrieve orders and filter by datetime.now
+            order = Order.query.filter_by(id=order_id, created_at=datetime.now()).first()
+            if order:
+                #update the order details with new values
+                user_id = request.json.get('user_id')
+                hamburger_id = request.json.get('hamburger_id')
+                acompañamiento_id = request.json.get('acompañamiento_id')
+                beverage_id = request.json.get('beverage_id')
+                quantity = request.json.get('quantity')
+
+                order.user_id = user_id
+                order.hamburger_id = hamburger_id
+                order.acompañamiento_id = acompañamiento_id
+                order.beverage_id = beverage_id
+                order.quantity = quantity
+
+                db.session.commit()
+
+                return jsonify({"msg": "Order updated successfully."}), 200
+            else:
+                return jsonify({"msg": "Order not found."}), 404
+
+    return jsonify({"msg": "Access Denied. Admin privileges required."}), 403
+
+            
+
+
+
+
+
+
+
 @app.route('/privada', methods=['GET', 'PUT'])
 @jwt_required()
 def privada():
@@ -156,6 +197,7 @@ def privada():
 
         # Actualizar los datos del usuario
         user.name = body["name"]
+        user.apellido = body["apellido"]
         user.cell_phone = body["cell_phone"]
         user.date_of_birth = body["date_of_birth"]
         # Guardar los cambios en la base de datos
@@ -360,7 +402,7 @@ def signup():
     user = User.query.filter_by(email=body['email']).first()
     if not user:
         print(body)
-        new_user = User(email=body['email'], password=body['password'], name=body['name'],
+        new_user = User(email=body['email'], password=body['password'], name=body['name'], apellido=body['apellido'],
                         is_admin=False, date_of_birth=body['date_of_birth'], cell_phone=body['cell_phone'])
         db.session.add(new_user)
         db.session.commit()
@@ -377,7 +419,7 @@ def login():
     user = User.query.filter_by(email=body['email']).first()
     if user:
         if user.password == body["password"]:
-            expire = datetime.timedelta(minutes=5)
+            expire = datetime.timedelta(minutes=25)
             token = create_access_token(
                 identity=user.email, expires_delta=expire)
             if user.is_admin:
@@ -419,13 +461,12 @@ def procesar_pago():
     "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
     }
     }
-    }
-
+    } 
 # Encabezados de la petición con el token de autorización
     headers = {
-    "Authorization": key
+    "Authorization": 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidXNpbmVzc01hY2hJZCI6IjI1NDU4MDM5LWYwM2UtNDE1OS04Y2IxLTAzYzA5MzMwMmEzYyIsImJ1c2luZXNzU2VjcmV0SWQiOiJmM2MxMmFhOS04NWI5LTRmYzMtYjA2NS1hYzQwZTYwYmMwMzEiLCJzY29wZXMiOlsicGF5bWVudHMuY3JlYXRlIiwicGF5bWVudHMuZ2V0Il0sImlhdCI6MTY4NTU5MzYwNn0.I3jyKytAIb0m0E_2MeakWtf8bVbkNNOHbs3G6Nh6nf8'
     }
-
+#crear orden(carrito), procesar pago(esperar confirmacion de la api de match, si fue cancelado, DELETE order, si fue correcto, POST order), confirmar pago y enviar resumen de comprar y por ende un GET de la orden al todolist (vista admin) 
 
 # Realizar la petición POST
     response = requests.post(url, json=payload, headers=headers)
@@ -440,7 +481,10 @@ def procesar_pago():
         resp = requests.get(f"https://biz-sandbox.soymach.com/payments/{tok}/qr", headers=headers)
         mach_data = resp.json()
         print(mach_data)
-        return jsonify(mach_data)
+        return jsonify({
+        "mach_data":mach_data,
+        "token_key":tok
+        })
     else:
         print("Error en la petición:", response.status_code)
 
@@ -461,3 +505,5 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GEt,PUT,POST,DELETE,OPTIONS')
     return response
+#agarrar toda la data del post
+#enviar todos los objetos a ese endpoint (id,quantity y price)

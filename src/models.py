@@ -24,6 +24,7 @@ class User(db.Model):
             'id': self.id,
             'name': self.name,
             'email': self.email,
+            'apellido':self.apellido,
             'date_of_birth': str(self.date_of_birth),
             'is_admin': self.is_admin,
             'cell_phone': self.cell_phone
