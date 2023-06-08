@@ -252,21 +252,6 @@ def edit_user(email):
     else:
         return jsonify({'error': 'User not found'}), 404
 
-
-@app.route('/created/order', methods=['POST'])
-def create_order():
-    user_id = request.json.get('user_id')
-    hamburger_id = request.json.get('hamburgers_id')
-    acompañamiento_id = request.json.get('acompañamientos_id')
-    beverage_id = request.json.get('beverage_id')
-    quantity = request.json.get('quantity')
-    created_at = datetime.datetime.now()
-    order = Order(user_id=user_id, hamburger_id=hamburger_id, acompañamiento_id=acompañamiento_id,
-                  beverage_id=beverage_id, quantity=quantity, created_at=created_at)
-    db.session.add(order)
-    db.session.commit()
-    return jsonify(order.serialize()), 201
-
 # Rutas para manejar las hamburguesas, beverages y acompañamientos
 
 
