@@ -8,12 +8,12 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Order , Order_Hamburger, Order_Beverage, Order_Acompañamiento, Hamburger, Beverage, Acompañamientos
+from models import db, User, Order, Order_Hamburger, Order_Beverage, Order_Acompañamiento, Hamburger, Beverage, Acompañamientos
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
 import datetime
 import re
 import requests
-import bcrypt
 
 # from models import Person
 key = os.environ.get('API_KEYS')
@@ -22,7 +22,8 @@ app.url_map.strict_slashes = False
 
 db_url = os.getenv("DATABASE_URL")
 if db_url is not None:
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace("postgres://", "postgresql://")
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
+        "postgres://", "postgresql://")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -30,7 +31,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
-jwt=JWTManager(app)
+jwt = JWTManager(app)
+bcrypt = Bcrypt(app)
 
 # Allow CORS requests to this API
 CORS(app)
@@ -63,9 +65,10 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
-#######################ORDENES################################
-
+####################### ORDENES################################
 # Route for getting all orders
+
+
 @app.route('/orders', methods=['GET'])
 def get_all_orders():
     orders = Order.query.all()
@@ -76,29 +79,31 @@ def get_all_orders():
 def new_order():
     user_id = request.json.get('user_id')
     hamburgers = request.json.get('hamburgers', [])  # List of hamburger items
-    acompañamientos = request.json.get('acompañamientos', [])  # List of acompañamiento items
+    acompañamientos = request.json.get(
+        'acompañamientos', [])  # List of acompañamiento items
     beverages = request.json.get('beverages', [])  # List of beverage items
 
-    order = Order(user_id=user_id, created_at= datetime.datetime.now())
+    order = Order(user_id=user_id, created_at=datetime.datetime.now())
     db.session.add(order)
     db.session.commit()
 
-    order_id  = int(order.id)
-    #Add hamburgers to the order
-    
+    order_id = int(order.id)
+    # Add hamburgers to the order
+
     for hamburger in hamburgers:
-            hamburger_id = hamburger.get('hamburger_id')
-            quantity = hamburger.get('quantity')
-            order_hamburger = Order_Hamburger(hamburgers_id=hamburger_id, quantity=quantity, order_id=order_id)
-            db.session.add(order_hamburger)
-            db.session.commit()
-            
+        hamburger_id = hamburger.get('hamburger_id')
+        quantity = hamburger.get('quantity')
+        order_hamburger = Order_Hamburger(
+            hamburgers_id=hamburger_id, quantity=quantity, order_id=order_id)
+        db.session.add(order_hamburger)
+        db.session.commit()
 
     # Add acompañamientos to the order
     for acompañamiento in acompañamientos:
         acompañamiento_id = acompañamiento.get('acompañamientos_id')
         quantity = acompañamiento.get('quantity')
-        order_acompañamiento = Order_Acompañamiento(acompañamiento_id=acompañamiento_id, quantity=quantity, order_id=order_id)
+        order_acompañamiento = Order_Acompañamiento(
+            acompañamiento_id=acompañamiento_id, quantity=quantity, order_id=order_id)
         db.session.add(order_acompañamiento)
         db.session.commit()
 
@@ -106,16 +111,15 @@ def new_order():
     for beverage in beverages:
         beverage_id = beverage.get('beverages_id')
         quantity = beverage.get('quantity')
-        order_beverage = Order_Beverage(beverage_id=beverage_id, quantity=quantity, order_id=order_id)
+        order_beverage = Order_Beverage(
+            beverage_id=beverage_id, quantity=quantity, order_id=order_id)
         db.session.add(order_beverage)
         db.session.commit()
-
-    
 
     return jsonify(order.serialize()), 201
 
 
-#######################FIN ORDENES#############################
+####################### FIN ORDENES#############################
 
 # Rutas para manejar usuarios
 @app.route('/users', methods=['GET'])
@@ -124,6 +128,8 @@ def get_users():
     users = User.query.all()
     user_list = [user.serialize() for user in users]
     return jsonify(user_list), 200
+
+
 """
 @app.route('/users/<string:email>', methods=['GET'])
 def get_user(email):
@@ -146,18 +152,22 @@ def get_user(email):
 """
 
 # Admin Route
+
+
 @app.route('/admin', methods=['GET', 'PUT'])
 @jwt_required()
 def admin():
     current_user = get_jwt_identity()
     print(current_user)
-    if current_user and current_user ['is_admin']: #hacer un query filter by email
+    # hacer un query filter by email
+    if current_user and current_user['is_admin']:
         if request.method == 'PUT':
             order_id = request.json.get('order_id')
             # retrieve orders and filter by datetime.now
-            order = Order.query.filter_by(id=order_id, created_at=datetime.now()).first()
+            order = Order.query.filter_by(
+                id=order_id, created_at=datetime.now()).first()
             if order:
-                #update the order details with new values
+                # update the order details with new values
                 user_id = request.json.get('user_id')
                 hamburger_id = request.json.get('hamburger_id')
                 acompañamiento_id = request.json.get('acompañamiento_id')
@@ -177,6 +187,7 @@ def admin():
                 return jsonify({"msg": "Order not found."}), 404
 
     return jsonify({"msg": "Access Denied. Admin privileges required."}), 403
+
 
 @app.route('/privada', methods=['GET', 'PUT'])
 @jwt_required()
@@ -207,11 +218,12 @@ def email_validity_check(email):
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     return re.match(pattern, email) is not None
 
+
 def edit_user(email):
     # Check if the email is valid
     if not email_validity_check(email):
         return jsonify({'error': 'Invalid email format'}), 400
-    
+
     # Check if the email exists in the database
     user = User.query.filter_by(email=email.first())
 
@@ -223,7 +235,8 @@ def edit_user(email):
         user.cell_phone = request.json.get('cell_phone', user.cell_phone)
         date_of_birth = request.json.get('date_of_birth')
         if date_of_birth:
-            user.date_of_birth = datetime.strptime(date_of_birth, '%Y-%m-%d'.date())
+            user.date_of_birth = datetime.strptime(
+                date_of_birth, '%Y-%m-%d'.date())
 
         db.session.commit()
 
@@ -235,7 +248,7 @@ def edit_user(email):
             'date_of_birth': user.date_of_birth.strftime('%Y-%m-%d')
         }
         return jsonify(user_data), 200
-    
+
     else:
         return jsonify({'error': 'User not found'}), 404
 
@@ -280,19 +293,20 @@ def create_hamburger():
     return jsonify(hamburger.serialize()), 201
 
 
-
 @app.route('/hamburgers/<int:hamburger_id>', methods=['GET', 'PUT'])
 def update_hamburger(hamburger_id):
     hamburger = Hamburger.query.get(hamburger_id)
     if not hamburger:
         return jsonify({'error': 'Hamburger not Found'}), 404
     if request.method == 'PUT':
-    # Update the attributes of the hamburger
-    
-        hamburger.name = request.json.get('name', hamburger.name) 
+        # Update the attributes of the hamburger
+
+        hamburger.name = request.json.get('name', hamburger.name)
         hamburger.price = request.json.get('price', hamburger.price)
-        hamburger.description = request.json.get('description', hamburger.description)
-        hamburger.hamburger_type = request.json.get('hamburger_type', hamburger.hamburger_type)
+        hamburger.description = request.json.get(
+            'description', hamburger.description)
+        hamburger.hamburger_type = request.json.get(
+            'hamburger_type', hamburger.hamburger_type)
 
     # Save the changes to the Database
     db.session.commit()
@@ -324,17 +338,20 @@ def create_beverages():
     db.session.commit()
     return jsonify(beverage.serialize()), 201
 
-@app.route('/beverages/<int:beverage_id>', methods=['GET','PUT'])
+
+@app.route('/beverages/<int:beverage_id>', methods=['GET', 'PUT'])
 def update_beverage(beverage_id):
     beverage = Beverage.query.get(beverage_id)
     if not beverage:
         return jsonify({'error': 'Beverage not found'}), 404
     if request.method == 'PUT':
-    # Update the attribute  of the beverage 
+        # Update the attribute  of the beverage
         beverage.name = request.json.get('name', beverage.name)
         beverage.price = request.json.get('price', beverage.price)
-        beverage.description = request.json.get('description', beverage.description)
-        beverage.hamburger_type = request.json.get('beverage_type', beverage.beverage_type)
+        beverage.description = request.json.get(
+            'description', beverage.description)
+        beverage.hamburger_type = request.json.get(
+            'beverage_type', beverage.beverage_type)
 
     # Save the changes to the Database
     db.session.commit()
@@ -346,10 +363,12 @@ def update_beverage(beverage_id):
 
 # ROUTES FOR ACOMPAÑAMIENTOS (GET, POST, PUT)
 
+
 @app.route('/acomp', methods=['GET'])
 def get_all_acompañamientos():
     acompañamientos = Acompañamientos.query.all()
     return jsonify([acompañamiento.serialize() for acompañamiento in acompañamientos]), 200
+
 
 @app.route('/crear_acomp', methods=['POST'])
 def create_acompañamientos():
@@ -360,34 +379,38 @@ def create_acompañamientos():
     acompañamiento_type = request.json.get('acompañamiento_type')
 
     acompañamiento = Acompañamientos(name=name, price=price,
-                        description=description, acompañamiento_type=acompañamiento_type, size=size)
+                                     description=description, acompañamiento_type=acompañamiento_type, size=size)
     db.session.add(acompañamiento)
     db.session.commit()
     return jsonify(acompañamiento.serialize()), 201
 
-@app.route('/acompañamientos/<int:acompanamiento_id>', methods=['GET','PUT'])
+
+@app.route('/acompañamientos/<int:acompanamiento_id>', methods=['GET', 'PUT'])
 def update_acompanamiento(acompanamiento_id):
     acompañamiento = Acompañamientos.query.get(acompanamiento_id)
     if not acompañamiento:
         return jsonify({'error': 'Acompañamiento not found'}), 404
     if request.method == 'PUT':
-    # Update the attributes of the acompañamiento
+        # Update the attributes of the acompañamiento
 
         acompañamiento.name = request.json.get('name', acompañamiento.name)
         acompañamiento.price = request.json.get('price', acompañamiento.price)
         acompañamiento.size = request.json.get('size', acompañamiento.size)
-        acompañamiento.description = request.json.get('description', acompañamiento.description)
-        acompañamiento.acompañamiento_type = request.json.get('acompañamiento_type', acompañamiento.acompañamiento_type)
+        acompañamiento.description = request.json.get(
+            'description', acompañamiento.description)
+        acompañamiento.acompañamiento_type = request.json.get(
+            'acompañamiento_type', acompañamiento.acompañamiento_type)
 
     # Save the cambios to the basedatos wey
     db.session.commit()
 
     return jsonify({
         'message': 'Acompañamiento updated sucessfully',
-        'acompañamiento':acompañamiento.serialize()
+        'acompañamiento': acompañamiento.serialize()
     }), 200
 
 # RUTAS PARA SIGN UP Y LOGIN (FALTA REESTABLECER CONTRASEÑA)
+
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -399,33 +422,32 @@ def signup():
     date_of_birth = body['date_of_birth']
     cell_phone = body['cell_phone']
 
-    #validate email format
-    if not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-        return jsonify({"msg": "Invalid email format"}), 400 
+    # validate email format
+    if not email or not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+        return jsonify({"msg": "Invalid email format"}), 400
 
     # Validate password strength (at least 8 characters with letters and numbers)
-    if len(password) < 8 or not any (char.isdigit() for char in password) or not any(char.isalpha() for char in password):
+    if len(password) < 8 or not any(char.isdigit() for char in password) or not any(char.isalpha() for char in password):
         return jsonify({"msg": "Password must be at least 8 characters long and contain both letters and numbers"}), 400
 
     # Validate name and apellido are not empty or blank
     if not name or name.strip() == "":
-        return jsonify ({"msg": "Name is required"}), 400
+        return jsonify({"msg": "Name is required"}), 400
 
     if not apellido or apellido.strip() == "":
-        return jsonify ({"msg": "Apellido is required"}), 400
+        return jsonify({"msg": "Apellido is required"}), 400
 
     # Validate Phone Number (exactly 8 digits)
-    if not re.search(r'^\d{8}$', cell_phone):
+    if not cell_phone or not re.search(r'^\d{8}$', cell_phone):
         return jsonify({"msg": "Invalid cell phone number format. it should contain exactly 8 digits."}), 400
 
-    # Hash the password using bcrypt
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-          
     user = User.query.filter_by(email=body['email']).first()
     if not user:
         print(body)
-        new_user = User(email=body['email'], password=body['hashed_password'], name=body['name'], apellido=body['apellido'],
-                        is_admin=False, date_of_birth=body['date_of_birth'], cell_phone=body['cell_phone'])
+
+        # Hash the password using bcrypt
+        new_user = User(email=email, password=password, name=name, apellido=apellido,
+                        is_admin=False, date_of_birth=date_of_birth, cell_phone=cell_phone)
         db.session.add(new_user)
         db.session.commit()
         return jsonify({"msg": "User was created"}), 200
@@ -436,9 +458,23 @@ def signup():
 @app.route("/login", methods=['POST'])
 def login():
     body = request.get_json()
+    email = body['email']
+    password = body['password']
+
+    # Validate Email format
+    if not email or not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', ['email']):
+        return jsonify({
+            "msg": "Invalid email format. Please enter a valid email adress."
+        }), 400
+
+    # Validate  password format
+    if not password or not re.search(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', password):
+        return jsonify({
+            "msg": "Invalid password format. Password must be  at least 8 characters long and contain both letters and numbers."
+        }), 400
     user = User.query.filter_by(email=body['email']).first()
     if user:
-        if user.password == body["password"]:
+        if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
             expire = datetime.timedelta(minutes=25)
             token = create_access_token(
                 identity=user.email, expires_delta=expire)
@@ -465,50 +501,86 @@ def login():
             "msg": "Wrong email or password. Please try again."
         }), 401
 
+
 @app.route('/procesar_pago', methods=['POST'])
 def procesar_pago():
 
-    url = "https://biz-sandbox.soymach.com/payments"  # URL de la API o servidor al que deseas hacer la petición
+    # URL de la API o servidor al que deseas hacer la petición
+    url = "https://biz-sandbox.soymach.com/payments"
 
     # Datos a enviar en la petición POST
     payload = {
-    "payment": {
-    "amount": 1,
-    "message": "Cheese",
-    "title": "BURGERFLY",
-    "metadata": {
-    "product_id": "dd6af8f6-4ba0-47d9-8c38-a4313e08b456",
-    "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
+        "payment": {
+            "amount": 1,
+            "message": "Cheese",
+            "title": "BURGERFLY",
+            "metadata": {
+                "product_id": "dd6af8f6-4ba0-47d9-8c38-a4313e08b456",
+                "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
+            }
+        }
     }
-    }
-    } 
 # Encabezados de la petición con el token de autorización
     headers = {
-    "Authorization": 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidXNpbmVzc01hY2hJZCI6IjI1NDU4MDM5LWYwM2UtNDE1OS04Y2IxLTAzYzA5MzMwMmEzYyIsImJ1c2luZXNzU2VjcmV0SWQiOiJmM2MxMmFhOS04NWI5LTRmYzMtYjA2NS1hYzQwZTYwYmMwMzEiLCJzY29wZXMiOlsicGF5bWVudHMuY3JlYXRlIiwicGF5bWVudHMuZ2V0Il0sImlhdCI6MTY4NTU5MzYwNn0.I3jyKytAIb0m0E_2MeakWtf8bVbkNNOHbs3G6Nh6nf8'
+        "Authorization": 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidXNpbmVzc01hY2hJZCI6IjI1NDU4MDM5LWYwM2UtNDE1OS04Y2IxLTAzYzA5MzMwMmEzYyIsImJ1c2luZXNzU2VjcmV0SWQiOiJmM2MxMmFhOS04NWI5LTRmYzMtYjA2NS1hYzQwZTYwYmMwMzEiLCJzY29wZXMiOlsicGF5bWVudHMuY3JlYXRlIiwicGF5bWVudHMuZ2V0Il0sImlhdCI6MTY4NTU5MzYwNn0.I3jyKytAIb0m0E_2MeakWtf8bVbkNNOHbs3G6Nh6nf8'
     }
-#crear orden(carrito), procesar pago(esperar confirmacion de la api de match, si fue cancelado, DELETE order, si fue correcto, POST order), confirmar pago y enviar resumen de comprar y por ende un GET de la orden al todolist (vista admin) 
+# crear orden(carrito), procesar pago(esperar confirmacion de la api de match, si fue cancelado, DELETE order, si fue correcto, POST order), confirmar pago y enviar resumen de comprar y por ende un GET de la orden al todolist (vista admin)
 
 # Realizar la petición POST
     response = requests.post(url, json=payload, headers=headers)
 
 # Verificar si la petición fue exitosa (código de estado 200)
     if response.status_code == 200:
-    # Acceder al contenido de la respuesta
+        # Acceder al contenido de la respuesta
         data = response.json()  # Si la respuesta es un JSON
     # data = response.text  # Si la respuesta es texto plano
         print(data["token"])
         tok = data["token"]
-        resp = requests.get(f"https://biz-sandbox.soymach.com/payments/{tok}/qr", headers=headers)
+        resp = requests.get(
+            f"https://biz-sandbox.soymach.com/payments/{tok}/qr", headers=headers)
         mach_data = resp.json()
         print(mach_data)
         return jsonify({
-        "mach_data":mach_data,
-        "token_key":tok
+            "mach_data": mach_data,
+            "token_key": tok
         })
     else:
         print("Error en la petición:", response.status_code)
 
 
+@app.route('/revisar_pago', methods=["GET"])
+def revisar_pago():
+    global tok
+
+    url = f"https://biz-sandbox.soymach.com/payments/{tok}"
+    headers = {
+        "Authorization": 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidXNpbmVzc01hY2hJZCI6IjI1NDU4MDM5LWYwM2UtNDE1OS04Y2IxLTAzYzA5MzMwMmEzYyIsImJ1c2luZXNzU2VjcmV0SWQiOiIzNGZlYWNmOC02MzU0LTQ0OTUtYjYxMS0zM2YxZmYxNmFhYmIiLCJzY29wZXMiOlsicGF5bWVudHMuY3JlYXRlIiwicGF5bWVudHMuZ2V0Il0sImlhdCI6MTY4NjAxNjQwNH0.-raE-hpnhrmJNikCxeRfvsvsX2-z4-ZzQYGJ1iUDMKY'
+    }
+
+    while True:
+        response = requests.get(url, headers=headers)
+        data = response.json()
+        print(data["status"])
+        
+        if data["status"] == "COMPLETED":
+            url = f"https://biz-sandbox.soymach.com/payments/{tok}/confirm"
+            payload = {
+             "payment": {
+             "amount": 1,
+             "message": "Cheese",
+             "title": "BURGERFLY",
+             "metadata": {
+            "product_id": "dd6af8f6-4ba0-47d9-8c38-a4313e08b456",
+            "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
+             }
+             }
+             } 
+            resp = requests.post(url,json=payload, headers=headers)
+            confirmed_data = resp.json()
+            print(confirmed_data)
+            return jsonify({"data": "Pago confirmado"}),200
+        
+        time.sleep(5)  # Wait for 5 seconds before checking again
 
 
 # this only runs if `$ python src/app.py` is executed
@@ -525,5 +597,5 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GEt,PUT,POST,DELETE,OPTIONS')
     return response
-#agarrar toda la data del post
-#enviar todos los objetos a ese endpoint (id,quantity y price)
+# agarrar toda la data del post
+# enviar todos los objetos a ese endpoint (id,quantity y price)
