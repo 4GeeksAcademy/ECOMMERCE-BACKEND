@@ -459,7 +459,6 @@ def login():
         }), 400
     user = User.query.filter_by(email=body['email']).first()
     if user:
-        if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
             expire = datetime.timedelta(minutes=25)
             token = create_access_token(
                 identity=user.email, expires_delta=expire)
