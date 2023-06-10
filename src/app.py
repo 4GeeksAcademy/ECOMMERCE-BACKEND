@@ -476,10 +476,6 @@ def login():
                     "token": token,
                     "exp": expire.total_seconds(),
                 })
-        else:
-            return jsonify({
-                "msg": "Wrong email or password. Please try again."
-            }), 401
     else:
         return jsonify({
             "msg": "Wrong email or password. Please try again."
