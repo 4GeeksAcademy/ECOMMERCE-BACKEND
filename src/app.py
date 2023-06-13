@@ -482,8 +482,8 @@ def login():
         }), 401
 
 
-@app.route('/procesar_pago', methods=['POST'])
-def procesar_pago():
+@app.route('/procesar_pago/<int:amount>', methods=['POST'])
+def procesar_pago(amount):
 
     # URL de la API o servidor al que deseas hacer la petición
     url = "https://biz-sandbox.soymach.com/payments"
@@ -491,13 +491,9 @@ def procesar_pago():
     # Datos a enviar en la petición POST
     payload = {
         "payment": {
-            "amount": 1,
+            "amount": amount,
             "message": "Cheese",
             "title": "BURGERFLY",
-            "metadata": {
-                "product_id": "dd6af8f6-4ba0-47d9-8c38-a4313e08b456",
-                "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
-            }
         }
     }
 # Encabezados de la petición con el token de autorización
@@ -544,18 +540,7 @@ def revisar_pago():
         
         if data["status"] == "COMPLETED":
             url = f"https://biz-sandbox.soymach.com/payments/{tok}/confirm"
-            payload = {
-             "payment": {
-             "amount": 1,
-             "message": "Cheese",
-             "title": "BURGERFLY",
-             "metadata": {
-            "product_id": "dd6af8f6-4ba0-47d9-8c38-a4313e08b456",
-            "customer_id": "ae0d6762-114b-480c-b60c-51df45110d61"
-             }
-             }
-             } 
-            resp = requests.post(url,json=payload, headers=headers)
+            resp = requests.post(url, headers=headers)
             confirmed_data = resp.json()
             print(confirmed_data)
             return jsonify({"data": "Pago confirmado"}),200
