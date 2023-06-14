@@ -10,7 +10,7 @@ class User(db.Model):
     name = db.Column(db.String(50), nullable=False)
     apellido = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(50), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=True)
     cell_phone = db.Column(db.String(50), nullable=True)
     is_admin = db.Column(db.Boolean(), default=False)
