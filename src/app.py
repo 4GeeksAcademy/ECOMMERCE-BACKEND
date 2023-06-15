@@ -460,21 +460,13 @@ def login():
     body = request.get_json()
     email = body['email']
     password = body['password']
-    print(email)
-    # Validate Email format
-    """
-    # if not email or not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', ['email']):
+    
+    # Validate  format
+    if not email or not password:
         return jsonify({
-            "msg": "Invalid email format. Please enter a valid email adress."
+            "msg": "Missing email or password. Please provide both email and password."
         }), 400
 
-    # Validate  password format
-    
-    #if not password or not re.search(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', password):
-        return jsonify({
-            "msg": "Invalid password format. Password must be  at least 8 characters long and contain both letters and numbers."
-        }), 400
-    """
     user = User.query.filter_by(email=body['email']).first()
     if user:
             expire = datetime.timedelta(minutes=25)
