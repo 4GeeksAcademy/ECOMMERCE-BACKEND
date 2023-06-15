@@ -460,18 +460,21 @@ def login():
     body = request.get_json()
     email = body['email']
     password = body['password']
-
+    print(email)
     # Validate Email format
-    if not email or not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', ['email']):
+    """
+    # if not email or not re.search(r'^[\w\.-]+@[\w\.-]+\.\w+$', ['email']):
         return jsonify({
             "msg": "Invalid email format. Please enter a valid email adress."
         }), 400
 
     # Validate  password format
-    if not password or not re.search(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', password):
+    
+    #if not password or not re.search(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', password):
         return jsonify({
             "msg": "Invalid password format. Password must be  at least 8 characters long and contain both letters and numbers."
         }), 400
+    """
     user = User.query.filter_by(email=body['email']).first()
     if user:
             expire = datetime.timedelta(minutes=25)
@@ -496,8 +499,6 @@ def login():
             "msg": "Wrong email or password. Please try again."
         }), 401
     
-tok = None
-
 @app.route('/procesar_pago/<int:amount>', methods=['POST'])
 def procesar_pago(amount):
 
@@ -540,19 +541,19 @@ def procesar_pago(amount):
         print("Error en la petición:", response.status_code)
 
 
-@app.route('/revisar_pago', methods=["GET"])
-def revisar_pago():
-    global tok
+@app.route('/revisar_pago/<string:tok>', methods=["GET"])
+def revisar_pago(tok):
+    
 
     url = f"https://biz-sandbox.soymach.com/payments/{tok}"
     headers = {
-        "Authorization": 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidXNpbmVzc01hY2hJZCI6IjI1NDU4MDM5LWYwM2UtNDE1OS04Y2IxLTAzYzA5MzMwMmEzYyIsImJ1c2luZXNzU2VjcmV0SWQiOiI2MGFkZmJlZS03OWU4LTRkMjYtYmY0My03OGZmNjJmZTQzZjAiLCJzY29wZXMiOlsicGF5bWVudHMuY3JlYXRlIiwicGF5bWVudHMuZ2V0Il0sImlhdCI6MTY4NjcxMzE4MH0.jB9HhWVg3ciFtRBlIMKzRz1e6LrYxp7dfdnPG3T-ng0'}
+        "Authorization": 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJidXNpbmVzc01hY2hJZCI6IjI1NDU4MDM5LWYwM2UtNDE1OS04Y2IxLTAzYzA5MzMwMmEzYyIsImJ1c2luZXNzU2VjcmV0SWQiOiI2MGFkZmJlZS03OWU4LTRkMjYtYmY0My03OGZmNjJmZTQzZjAiLCJzY29wZXMiOlsicGF5bWVudHMuY3JlYXRlIiwicGF5bWVudHMuZ2V0Il0sImlhdCI6MTY4NjcxMzE4MH0.jB9HhWVg3ciFtRBlIMKzRz1e6LrYxp7dfdnPG3T-ng0'
+        }
 
     while True:
         response = requests.get(url, headers=headers)
         data = response.json()
         print(data["status"])
-        
         if data["status"] == "COMPLETED":
             url = f"https://biz-sandbox.soymach.com/payments/{tok}/confirm"
             resp = requests.post(url, headers=headers)
@@ -561,7 +562,6 @@ def revisar_pago():
             return jsonify({"data": "Pago confirmado"}),200
         
         time.sleep(5)  # Wait for 5 seconds before checking again
-
 
 
 # this only runs if `$ python src/app.py` is executed
